@@ -19,6 +19,7 @@ DATABASE_FILE = "subscriptions.db"
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.getenv("PORT", 8080))
 WEBHOOK_PATH = "/webhook"
-
-# Замените после деплоя на https://ваш-сервис.onrender.com
 WEBHOOK_HOST = os.getenv("RENDER_EXTERNAL_URL", "https://ваш-сервис.onrender.com")
+
+# Цена подписки в звёздах (Telegram Stars)
+PRICE_STARS = 10  # 1 звезда за 7 дней (можно изменить)
