@@ -1,4 +1,4 @@
-from aiogram import Router, F, types
+from aiogram import Router, types
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from config import GROUP_ID, TOPIC_IDS, CHEAP_THRESHOLD, MEDIUM_THRESHOLD, LISTEN_CHATS, CHANNEL_USERNAME, ADMIN_ID
@@ -8,9 +8,8 @@ import logging
 import datetime
 
 router = Router()
-init_db()  # создаём таблицу при старте
+init_db()
 
-# Клавиатура для подписки
 def get_subscribe_keyboard():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
@@ -22,7 +21,6 @@ def get_subscribe_keyboard():
     ])
     return keyboard
 
-# Команда /start
 @router.message(Command("start"))
 async def cmd_start(message: Message):
     user_id = message.from_user.id
@@ -30,7 +28,6 @@ async def cmd_start(message: Message):
         await message.answer("👋 Вы администратор, доступ предоставлен навсегда.")
         return
 
-    # Проверяем подписку
     try:
         member = await message.bot.get_chat_member(f"@{CHANNEL_USERNAME}", user_id)
         status = member.status
@@ -38,13 +35,13 @@ async def cmd_start(message: Message):
         status = "left"
 
     if status in ("member", "administrator", "creator"):
-        # Подписан – даём доступ на 7 дней
         set_subscription(user_id, days=7)
         expiry = get_subscription(user_id)
         await message.answer(
             f"✅ Вы подписаны на канал @{CHANNEL_USERNAME}!\n"
             f"Доступ к трекеру активен до **{expiry}** (по МСК).\n"
-            f"Теперь вы можете отправлять объявления о NFT-подарках в эту группу."
+            f"Теперь вы можете отправлять объявления о NFT-подарках в эту группу.",
+            parse_mode="Markdown"
         )
     else:
         await message.answer(
@@ -53,8 +50,7 @@ async def cmd_start(message: Message):
             reply_markup=get_subscribe_keyboard()
         )
 
-# Обработка нажатия кнопки "Проверить подписку"
-@router.callback_query(F.data == "check_subscribe")
+@router.callback_query(lambda c: c.data == "check_subscribe")
 async def check_subscribe_callback(callback: CallbackQuery):
     user_id = callback.from_user.id
     if user_id == ADMIN_ID:
@@ -74,22 +70,20 @@ async def check_subscribe_callback(callback: CallbackQuery):
         await callback.message.edit_text(
             f"✅ Подписка подтверждена!\n"
             f"Доступ до **{expiry}** (по МСК).\n"
-            f"Теперь вы можете отправлять объявления."
+            f"Теперь вы можете отправлять объявления.",
+            parse_mode="Markdown"
         )
         await callback.answer()
     else:
         await callback.answer("❌ Вы ещё не подписаны. Подпишитесь и нажмите снова.", show_alert=True)
 
-# Обработка всех сообщений в слушаемых чатах (обработка NFT)
-@router.message(F.chat.id.in_(LISTEN_CHATS))
+@router.message(lambda msg: msg.chat.id in LISTEN_CHATS)
 async def handle_nft_post(message: Message):
     user_id = message.from_user.id
 
-    # Администратор – пропускаем проверку
     if user_id == ADMIN_ID:
         pass
     else:
-        # Проверяем подписку
         try:
             member = await message.bot.get_chat_member(f"@{CHANNEL_USERNAME}", user_id)
             status = member.status
@@ -97,7 +91,6 @@ async def handle_nft_post(message: Message):
             status = "left"
 
         if status not in ("member", "administrator", "creator"):
-            # Не подписан – просим подписаться
             await message.reply(
                 f"🔒 Для отправки объявлений нужно подписаться на канал @{CHANNEL_USERNAME}.\n"
                 f"Используйте /start для получения инструкций.",
@@ -105,20 +98,15 @@ async def handle_nft_post(message: Message):
             )
             return
 
-        # Подписан, но может истекла подписка (если прошло >7 дней)
         if not is_subscription_valid(user_id):
-            # Подписан, но срок истёк – обновляем (даём ещё 7 дней)
             set_subscription(user_id, days=7)
-            # можно уведомить, но не обязательно
 
-    # --- Далее обработка самого объявления ---
     text = message.text or message.caption or ""
     if not text:
         return
 
     link = parse_link(text)
     if not link:
-        # Можно игнорировать или попросить добавить ссылку
         return
 
     price = parse_price(text)
@@ -130,7 +118,6 @@ async def handle_nft_post(message: Message):
     is_premium = sender.is_premium if hasattr(sender, 'is_premium') else False
     premium_text = "✅ Есть Premium" if is_premium else "❌ Нет Premium"
 
-    # Категория по цене
     if price <= CHEAP_THRESHOLD:
         category = "cheap"
         category_label = "Дешёвые (до 5 TON)"
@@ -162,7 +149,5 @@ async def handle_nft_post(message: Message):
             parse_mode="Markdown",
             disable_web_page_preview=False
         )
-        # Необязательное подтверждение автору:
-        # await message.reply("✅ Объявление отправлено в соответствующий раздел.")
     except Exception as e:
         logging.error(f"Ошибка отправки в топик {topic_id}: {e}")
