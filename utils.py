@@ -1,10 +1,10 @@
 import re
 
-def parse_price(text: str) -> int | None:
+def parse_price(text: str):
     match = re.search(r'(\d+)\s*(?:TON|ton|Stars|звезд|⭐)?', text)
     return int(match.group(1)) if match else None
 
-def parse_link(text: str) -> str | None:
+def parse_link(text: str):
     match = re.search(r'(https?://t\.me/[^\s]+)', text)
     if match:
         return match.group(1)
@@ -13,7 +13,7 @@ def parse_link(text: str) -> str | None:
         return "https://" + match2.group(1)
     return None
 
-def extract_username(sender) -> str:
+def extract_username(sender):
     if sender.username:
         return f"@{sender.username}"
     return f"{sender.first_name} ({sender.id})"
