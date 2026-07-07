@@ -2,28 +2,29 @@ import os
 
 BOT_TOKEN = "8809049015:AAG6n78BagfF0AMiojQL0y1EHld3qgTylKE"
 
-# ID группы с топиками
+# ID группы и топиков
 GROUP_ID = -1004379430999
-
-# ID топиков (разделов)
 TOPIC_IDS = {
-    "cheap": 2,      # Дешёвые (до 5 TON)
-    "medium": 3,     # Средние (5–30 TON)
-    "expensive": 4   # Дорогие (от 30 TON)
+    "cheap": 2,      # Дешёвые
+    "medium": 3,     # Средние
+    "expensive": 4   # Дорогие
 }
 
 # Пороги цен
 CHEAP_THRESHOLD = 5
 MEDIUM_THRESHOLD = 30
 
-# Канал для подписки (без @)
+# Подписка
 CHANNEL_USERNAME = "lpdmv"
-
-# ID администратора (бесплатный доступ)
 ADMIN_ID = 8297446667
-
-# Чаты, где бот слушает сообщения (группа с трекером)
 LISTEN_CHATS = [GROUP_ID]
-
-# Название БД
 DATABASE_FILE = "subscriptions.db"
+
+# Настройки веб-сервера (Render передаёт PORT)
+WEBAPP_HOST = "0.0.0.0"
+WEBAPP_PORT = int(os.getenv("PORT", 8080))
+WEBHOOK_PATH = "/webhook"
+
+# Внешний URL вашего сервиса (Render подставит в RENDER_EXTERNAL_URL)
+# Если не задано – пропишите вручную (без слеша в конце)
+WEBHOOK_HOST = os.getenv("RENDER_EXTERNAL_URL", "https://ваш-сервис.onrender.com")
