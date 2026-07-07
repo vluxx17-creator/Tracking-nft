@@ -17,8 +17,11 @@ def get_subscription(user_id: int):
     conn.close()
     return row[0] if row else None
 
-def set_subscription(user_id: int, days: int = 7):
-    expiry = datetime.datetime.now() + datetime.timedelta(days=days)
+def set_subscription(user_id: int, days: int = 7, custom_date=None):
+    if custom_date:
+        expiry = custom_date
+    else:
+        expiry = datetime.datetime.now() + datetime.timedelta(days=days)
     conn = sqlite3.connect(DATABASE_FILE)
     cur = conn.cursor()
     cur.execute("REPLACE INTO subscriptions (user_id, expiry_date) VALUES (?, ?)", (user_id, expiry.isoformat()))
